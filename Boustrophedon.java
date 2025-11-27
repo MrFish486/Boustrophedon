@@ -34,6 +34,15 @@ public class Boustrophedon {
 			this.W.add(value.charAt(i));
 		}
 	}
+	public int getIndex () {
+		return this.index;
+	}
+	public String getInstruction () {
+		return this.source[this.index];
+	}
+	public int getLength () {
+		return this.source.length;
+	}
 	public void tick () {
 		String instruction = this.source[this.index];
 		if (instruction.equals("HELP")) {
@@ -120,7 +129,7 @@ public class Boustrophedon {
 		} else if (instruction.equals("")) {
 			// nada
 		} else {
-			System.err.println(String.format("Unknown instruction on line %d : '%s'", this.index + 1, instruction));
+			System.err.println(String.format("\033[1;31mUnknown instruction on line %d\033[0m : '%s'", this.index + 1, instruction));
 			System.exit(-1);
 		}
 		this.index += this.forward ? 1 : -1;
@@ -136,6 +145,44 @@ public class Boustrophedon {
 		if (args.length == 1) {
 			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])));
 			while (true) {
+				program.tick();
+			}
+		} else if (args.length == 2 && args[1].equals("debug")) {
+			Scanner sc = new Scanner (System.in);
+			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])));
+			System.out.println("\033[1mBoustrophedon debugger\033[0m");
+			int skip = 0;
+			while (true) {
+				if (skip == 0) {
+					System.out.println(String.format("\033[1mU\033[0m=FILE  [%s]\n\033[1mV\033[0m=CHAR  ['%s']\n\033[1mW\033[0m=STRING [\"%s\"]\n\033[1mX\033[0m=INT   [%d]\n\033[1mY\033[0m=FLOAT [%f]\n\033[1mZ\033[0m=BOOL  [%b]", program.U.getName(), program.V == '\n' ? "\n" : program.V + "", program.getW(), program.X, program.Y, program.Z));
+					System.out.println(String.format("INSTRUCTION (%d / %d) = %s", program.getIndex(), program.getLength(), program.getInstruction()));
+					String f = sc.nextLine();
+					if (f.equals("skip")) {
+						System.out.print("How many lines? : ");
+						skip = sc.nextInt();
+						try {
+							System.in.read(new byte[System.in.available()]);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					} else if (f.equals("nav")) {
+						System.out.print("What line? : ");
+						int tmp = sc.nextInt();
+						if (program.getIndex() + 1 > tmp) {
+							System.out.println("Cannot navigate backwards");
+						} else {
+							skip = tmp - program.getIndex();
+							System.out.println(skip);
+						}
+						try {
+							System.in.read(new byte[System.in.available()]);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				} else {
+					skip --;
+				}
 				program.tick();
 			}
 		}
