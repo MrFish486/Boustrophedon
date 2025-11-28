@@ -171,7 +171,7 @@ public class Boustrophedon {
 						if (program.getIndex() + 1 > tmp) {
 							System.out.println("Cannot navigate backwards");
 						} else {
-							skip = tmp - program.getIndex();
+							skip = tmp - (program.getIndex() + 2);
 							System.out.println(skip);
 						}
 						try {
