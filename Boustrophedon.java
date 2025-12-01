@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class Boustrophedon {
 	private String[] source;
 	private int index = 0;
+	private int returnindex = -1;
 	private boolean forward = true;
 	private boolean analysismode;
 	public File                 U;
@@ -24,7 +25,7 @@ public class Boustrophedon {
 		this.analysismode = analysismode;
 	}
 	public void renderState () {
-		System.out.println(String.format("\033[1mU\033[0m=FILE   [%s]\n\033[1mV\033[0m=CHAR   ['%s']\n\033[1mW\033[0m=STRING [\"%s\"]\n\033[1mX\033[0m=INT    [%d]\n\033[1mY\033[0m=FLOAT  [%f]\n\033[1mZ\033[0m=BOOL   [%b]", this.U.getName(), this.V == '\n' ? "\\n" : this.V + "", this.getW().replace("\n", "\\n"), this.X, this.Y, this.Z));
+		System.out.println(String.format("\033[1mU\033[0m=FILE   [%s]\n\033[1mV\033[0m=CHAR   ['%s']\n\033[1mW\033[0m=STRING [\"%s\"]\n\033[1mX\033[0m=INT    [%d]\n\033[1mY\033[0m=FLOAT  [%f]\n\033[1mZ\033[0m=BOOL   [%b]\nReturnIndex=%d", this.U.getName(), this.V == '\n' ? "\\n" : this.V + "", this.getW().replace("\n", "\\n"), this.X, this.Y, this.Z, this.returnindex));
 		System.out.print(String.format("INSTRUCTION (\033[1m%d\033[0m / \033[1m%d\033[0m) = %s", this.getIndex() + 1, this.getLength(), this.getInstruction()));
 	}
 	public String getW () {
@@ -67,6 +68,10 @@ public class Boustrophedon {
 			int swp = Math.round(this.Y);
 			this.Y = (float) this.X;
 			this.X = swp;
+		} else if (instruction.equals("SWAP U W")) {
+			String swp = this.U.getName();
+			this.U = new File(this.getW());
+			this.setW(swp);
 		} else if (instruction.equals("NOT")) {
 			this.Z = !this.Z;
 		} else if (instruction.equals("FALSE")) {
@@ -118,6 +123,10 @@ public class Boustrophedon {
 			this.Z = this.X > this.Y;
 		} else if (instruction.equals("LESS THAN")) {
 			this.Z = this.X < this.Y;
+		} else if (instruction.equals("SPLIT")) {
+			this.setW(this.getW().split(this.V + "")[this.X]);
+		} else if (instruction.equals("READ LINE")) {
+			this.setW(Boustrophedon.readFromFile(this.U).split(this.V + "")[this.X]);
 		} else if (instruction.equals("SERIALIZE U")) {
 			this.setW(this.U.getName());
 		} else if (instruction.equals("SERIALIZE V")) {
@@ -129,7 +138,13 @@ public class Boustrophedon {
 		} else if (instruction.equals("SERIALIZE Z")) {
 			this.setW(this.Z ? "true" : "false");
 		} else if (instruction.equals("GO")) {
-			this.index = this.X > 0 ? this.X + 1 : this.index;
+			this.returnindex = this.index;
+			this.index = this.X > 0 ? this.X - 1 : this.index;
+		} else if (instruction.equals("RETURN")) {
+			if (this.returnindex != -1) {
+				this.index = this.returnindex;
+				this.returnindex = -1;
+			}
 		} else if (instruction.equals("EXIT")) {
 			if (this.analysismode) this.renderState();
 			System.exit(this.X % 256); // Negative numbers are reserved
@@ -194,6 +209,8 @@ public class Boustrophedon {
 			//String[] content = Boustrophedon.readFromFile(new File(args[0])).split("\n");
 			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])), true);
 			while (true) program.tick();
+		} else {
+			System.out.println("\033[1mUsage\033[0m:\n\tBoustrophedon <file>         - run a file\n\tBoustrophedon <file> -ana    - run a file in analysis mode\n\tBoustrophedon <file> -debug  - run a file in debug mode");
 		}
 	}
 	public static void writeToFile (File file, String content, boolean append) {

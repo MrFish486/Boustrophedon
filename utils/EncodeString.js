@@ -1,4 +1,4 @@
-const t = /*String to encode */;
+const t = "/dev/stdout/"/*Replace with string to encode*/;
 
 const codes = t.split("").map(e => e.charCodeAt(0).toString(2).split(""));
 
