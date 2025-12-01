@@ -6,13 +6,14 @@ public class Boustrophedon {
 	private String[] source;
 	private int index = 0;
 	private boolean forward = true;
+	private boolean analysismode;
 	public File                 U;
 	public char                 V;
 	public ArrayList<Character> W;
 	public int                  X;
 	public float                Y;
 	public boolean              Z;
-	public Boustrophedon (String program) {
+	public Boustrophedon (String program, boolean analysismode) {
 		this.source = program.split("\n");
 		this.U = new File("/dev/null");
 		this.V = '\u0000';
@@ -20,6 +21,11 @@ public class Boustrophedon {
 		this.X = 0;
 		this.Y = 0f;
 		this.Z = false;
+		this.analysismode = analysismode;
+	}
+	public void renderState () {
+		System.out.println(String.format("\033[1mU\033[0m=FILE   [%s]\n\033[1mV\033[0m=CHAR   ['%s']\n\033[1mW\033[0m=STRING [\"%s\"]\n\033[1mX\033[0m=INT    [%d]\n\033[1mY\033[0m=FLOAT  [%f]\n\033[1mZ\033[0m=BOOL   [%b]", this.U.getName(), this.V == '\n' ? "\\n" : this.V + "", this.getW().replace("\n", "\\n"), this.X, this.Y, this.Z));
+		System.out.print(String.format("INSTRUCTION (\033[1m%d\033[0m / \033[1m%d\033[0m) = %s", this.getIndex() + 1, this.getLength(), this.getInstruction()));
 	}
 	public String getW () {
 		String out = "";
@@ -125,11 +131,13 @@ public class Boustrophedon {
 		} else if (instruction.equals("GO")) {
 			this.index = this.X > 0 ? this.X + 1 : this.index;
 		} else if (instruction.equals("EXIT")) {
+			if (this.analysismode) this.renderState();
 			System.exit(this.X % 256); // Negative numbers are reserved
 		} else if (instruction.equals("")) {
 			// nada
 		} else {
-			System.err.println(String.format("\033[1;31mUnknown instruction on line %d\033[0m : '%s'", this.index + 1, instruction));
+			System.err.println(String.format("\033[1;31mUnknown instruction\033[0m on line %d : '%s'", this.index + 1, instruction));
+			if (this.analysismode) this.renderState();
 			System.exit(-1);
 		}
 		this.index += this.forward ? 1 : -1;
@@ -143,19 +151,16 @@ public class Boustrophedon {
 	}
 	public static void main (String args[]) {
 		if (args.length == 1) {
-			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])));
-			while (true) {
-				program.tick();
-			}
-		} else if (args.length == 2 && args[1].equals("debug")) {
+			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])), false);
+			while (true) program.tick();
+		} else if (args.length == 2 && args[1].equals("-debug")) {
 			Scanner sc = new Scanner (System.in);
-			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])));
+			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])), false);
 			System.out.println("\033[1mBoustrophedon debugger\033[0m");
 			int skip = 0;
 			while (true) {
 				if (skip == 0) {
-					System.out.println(String.format("\033[1mU\033[0m=FILE  [%s]\n\033[1mV\033[0m=CHAR  ['%s']\n\033[1mW\033[0m=STRING [\"%s\"]\n\033[1mX\033[0m=INT   [%d]\n\033[1mY\033[0m=FLOAT [%f]\n\033[1mZ\033[0m=BOOL  [%b]", program.U.getName(), program.V == '\n' ? "\n" : program.V + "", program.getW(), program.X, program.Y, program.Z));
-					System.out.println(String.format("INSTRUCTION (%d / %d) = %s", program.getIndex(), program.getLength(), program.getInstruction()));
+					program.renderState();
 					String f = sc.nextLine();
 					if (f.equals("skip")) {
 						System.out.print("How many lines? : ");
@@ -171,8 +176,7 @@ public class Boustrophedon {
 						if (program.getIndex() + 1 > tmp) {
 							System.out.println("Cannot navigate backwards");
 						} else {
-							skip = tmp - program.getIndex();
-							sc.nextLine();
+							skip = tmp - (program.getIndex() + 1);
 							sc.nextLine();
 						}
 						try {
@@ -186,6 +190,10 @@ public class Boustrophedon {
 				}
 				program.tick();
 			}
+		} else if (args.length == 2 && args[1].equals("-ana")) {
+			//String[] content = Boustrophedon.readFromFile(new File(args[0])).split("\n");
+			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])), true);
+			while (true) program.tick();
 		}
 	}
 	public static void writeToFile (File file, String content, boolean append) {
