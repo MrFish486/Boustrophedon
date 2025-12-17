@@ -142,7 +142,7 @@ public class Boustrophedon {
 			this.index = this.X > 0 ? this.X - 1 : this.index;
 		} else if (instruction.equals("RETURN")) {
 			if (this.returnindex != -1) {
-				this.index = this.returnindex;
+				this.index = this.returnindex + 1;
 				this.returnindex = -1;
 			}
 		} else if (instruction.equals("EXIT")) {
