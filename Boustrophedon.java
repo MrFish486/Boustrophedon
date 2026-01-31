@@ -169,12 +169,14 @@ public class Boustrophedon {
 			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])), false);
 			while (true) program.tick();
 		} else if (args.length == 2 && args[1].equals("-debug")) {
+			System.out.println("\033[?25h");
 			Scanner sc = new Scanner (System.in);
 			Boustrophedon program = new Boustrophedon (Boustrophedon.readFromFile(new File(args[0])), false);
 			System.out.println("\033[1mBoustrophedon debugger\033[0m");
 			int skip = 0;
 			while (true) {
 				if (skip == 0) {
+					Boustrophedon.clear();
 					program.renderState();
 					String f = sc.nextLine();
 					if (f.equals("skip")) {
@@ -243,5 +245,8 @@ public class Boustrophedon {
 			e.printStackTrace();
 		}
 		return content;
+	}
+	public static void clear () {
+		System.out.print("\033[H\033[2J\033[3J");
 	}
 }
